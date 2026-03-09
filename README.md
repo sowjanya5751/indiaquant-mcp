@@ -8,32 +8,56 @@ The system exposes these capabilities as MCP-compatible tools so an AI agent (li
 ---
 
 # Project Architecture
+
+```
 AI Agent (Claude / AI Assistant)
-│
-▼
+        │
+        ▼
 MCP Tool Server (FastAPI)
-│
-├── Market Data Engine
-├── Signal Generator
-├── Options Analyzer
-├── Greeks Calculator
-├── Portfolio Manager
-├── Sentiment Analyzer
-├── Market Scanner
-└── Sector Heatmap
-
-│
-▼
+        │
+        ├── Market Data Engine
+        ├── Signal Generator
+        ├── Options Analyzer
+        ├── Greeks Calculator
+        ├── Portfolio Manager
+        ├── Sentiment Analyzer
+        ├── Market Scanner
+        └── Sector Heatmap
+        │
+        ▼
 External APIs
-
-Yahoo Finance (yfinance)
-
-NewsAPI
-
-Alpha Vantage (optional)
+   ├── Yahoo Finance (yfinance)
+   ├── NewsAPI
+   └── Alpha Vantage (optional)
+```
 
 The system is designed as a **modular financial intelligence platform**, where each component provides a specific capability.
 
+---
+# Project Structure
+
+```
+indiaquant-mcp
+│
+├── app
+│   ├── market_data
+│   ├── signals
+│   ├── options
+│   ├── analytics
+│   ├── portfolio
+│   └── mcp
+│
+├── screenshots
+│   ├── live_price.png
+│   ├── signal.png
+│   ├── trade.png
+│   └── heatmap.png
+│
+├── main.py
+├── config.py
+├── requirements.txt
+└── README.md
+```
 ---
 
 # MCP Tools Implemented
@@ -71,13 +95,14 @@ Capabilities:
 - Supports NSE and global stocks
 
 Example response:
+```json
 {
 "symbol": "RELIANCE",
 "price": 1418.6,
 "change_percent": 3.17,
 "volume": 34897
 }
-
+```
 
 ---
 
@@ -96,12 +121,13 @@ BUY / SELL / HOLD
 confidence score
 
 Example:
+```json
 {
 "symbol": "RELIANCE",
 "signal": "BUY",
 "confidence": 40
 }
-
+```
 
 ---
 
@@ -130,12 +156,15 @@ Greeks calculated:
 - Vega
 
 Example:
+
+```json
 {
-"delta": 0.2265,
-"gamma": 0.026248,
-"theta": -0.06355,
-"vega": 0.172592
+  "delta": 0.2265,
+  "gamma": 0.026248,
+  "theta": -0.06355,
+  "vega": 0.172592
 }
+```
 
 ---
 
@@ -152,12 +181,13 @@ Features:
 
 Example:
 POST /place_virtual_trade
-
+```json
 {
 "symbol": "RELIANCE",
 "qty": 1,
 "side": "BUY"
 }
+```
 
 ---
 
@@ -172,11 +202,14 @@ Process:
 3. Generate sentiment signal
 
 Example output:
+
+```json
 {
-"symbol": "Reliance",
-"sentiment_score": 2,
-"signal": "POSITIVE"
+  "symbol": "RELIANCE",
+  "sentiment_score": 2,
+  "signal": "POSITIVE"
 }
+```
 
 ---
 
@@ -188,6 +221,7 @@ Criteria:
 RSI < 30
 
 Example response:
+```json
 [
 {
 "symbol": "AAPL",
@@ -195,6 +229,7 @@ Example response:
 "signal": "OVERSOLD"
 }
 ]
+```
 
 ---
 
@@ -203,12 +238,14 @@ Example response:
 Analyzes sector performance by aggregating stock movements.
 
 Example output:
+```json
 [
 {"sector": "IT", "change_percent": 0.35},
 {"sector": "BANKING", "change_percent": -2.82},
 {"sector": "ENERGY", "change_percent": -0.78},
 {"sector": "AUTO", "change_percent": -4.6}
 ]
+```
 
 ---
 
@@ -247,9 +284,18 @@ cd indiaquant-mcp
 
 Create virtual environment
 
+Windows
+
 
 python -m venv venv
 venv\Scripts\activate
+
+
+Linux / Mac
+
+
+python -m venv venv
+source venv/bin/activate
 
 
 Install dependencies
@@ -273,6 +319,23 @@ Server will start at:
 
 http://127.0.0.1:8000
 
+
+---
+
+# API Endpoints
+
+| Endpoint | Method | Description |
+|--------|--------|-------------|
+| `/get_live_price` | POST | Fetch live stock price |
+| `/generate_signal` | POST | Generate trading signal |
+| `/get_options_chain` | POST | Retrieve options data |
+| `/calculate_greeks` | POST | Compute Black-Scholes Greeks |
+| `/place_virtual_trade` | POST | Execute simulated trade |
+| `/get_portfolio_pnl` | GET | Calculate portfolio PnL |
+| `/analyze_sentiment` | POST | Analyze financial news sentiment |
+| `/detect_unusual_activity` | POST | Detect unusual options activity |
+| `/scan_market` | GET | Find oversold stocks |
+| `/get_sector_heatmap` | GET | Sector performance overview |
 
 ---
 
@@ -346,7 +409,7 @@ Possible extensions:
 
 ### Sector Heatmap
 ![Heatmap](screenshots/heatmap.png)
-# Conclusion
+## Conclusion
 
 IndiaQuant MCP demonstrates how AI agents can interact with financial markets through modular tools and real-time data pipelines.
 
