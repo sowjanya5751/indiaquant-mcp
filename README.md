@@ -333,7 +333,19 @@ Possible extensions:
 ✔ API-based MCP server compatible with AI agents
 
 ---
+## API Demo
 
+### Live Price
+![Live Price](screenshots/live_price.png)
+
+### Trade Signal
+![Signal](screenshots/signal.png)
+
+### Portfolio Trade
+![Trade](screenshots/trade.png)
+
+### Sector Heatmap
+![Heatmap](screenshots/heatmap.png)
 # Conclusion
 
 IndiaQuant MCP demonstrates how AI agents can interact with financial markets through modular tools and real-time data pipelines.
