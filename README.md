@@ -1,4 +1,15 @@
-# IndiaQuant MCP – AI-Powered Stock Market Assistant
+# 🚀 IndiaQuant MCP – AI-Powered Market Intelligence System
+
+> Production-ready AI system for real-time stock analysis, trading signals, and portfolio simulation using FastAPI and MCP architecture.
+
+⚡ Built with:
+- FastAPI backend
+- Real-time APIs (yfinance, NewsAPI)
+- Options analytics + Black-Scholes Greeks
+- Portfolio simulation (SQLite)
+- AI-agent compatible MCP tools
+
+👉 Designed as a modular system for real-world financial intelligence applications
 
 IndiaQuant MCP is a real-time AI-powered market intelligence system built using the **Model Context Protocol (MCP)**.  
 It provides live stock data, trading signals, options analytics, sentiment analysis, and portfolio simulation using **100% free APIs**.
