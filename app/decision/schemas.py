@@ -50,6 +50,8 @@ class DecisionWeights(BaseModel):
 class ValidationConfig(BaseModel):
     min_unified_confidence: float = Field(default=0.35, ge=0.0, le=1.0)
     min_edge_magnitude: float = Field(default=0.12, ge=0.0, le=1.0)
+    conflict_penalty: float = Field(default=0.15, ge=0.0, le=1.0)
+    alignment_boost: float = Field(default=0.05, ge=0.0, le=1.0)
     high_volatility_annualized: float = Field(
         default=0.45,
         ge=0.0,
