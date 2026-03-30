@@ -106,16 +106,16 @@ class DecisionEngine:
 
         agreement = self._agreement(signals, notes)
         if agreement.conflict:
-            penalty = 0.15
+            penalty = validation_cfg.conflict_penalty
             raw_conf = max(0.0, raw_conf - penalty)
             notes.append(f"Cross-module conflict detected; confidence haircut {penalty:.2f}")
 
         unified = max(0.0, min(1.0, raw_conf))
         if agreement.buy_votes >= 2 and agreement.sell_votes == 0:
-            unified = min(1.0, unified + 0.05)
+            unified = min(1.0, unified + validation_cfg.alignment_boost)
             notes.append("Two-way bullish alignment boost (+0.05 cap)")
         if agreement.sell_votes >= 2 and agreement.buy_votes == 0:
-            unified = min(1.0, unified + 0.05)
+            unified = min(1.0, unified + validation_cfg.alignment_boost)
             notes.append("Two-way bearish alignment boost (+0.05 cap)")
 
         vol_warnings: list[str] = []
