@@ -30,7 +30,13 @@ class NormalizedSignal(BaseModel):
     @classmethod
     def clamp_confidence(cls, v: float) -> float:
         return max(0.0, min(1.0, float(v)))
+class ReasoningItem(BaseModel):
+    """Human-readable explanation for each module's contribution."""
 
+    source: ModuleSource
+    direction: Direction
+    confidence: float = Field(ge=0.0, le=1.0)
+    details: str = Field(default="")
 
 class DecisionWeights(BaseModel):
     """Configurable fusion weights (rule-based v1)."""
@@ -99,6 +105,7 @@ class MarketDecisionResponse(BaseModel):
     execution_hint: str
     agreement: AgreementSummary
     validation: ValidationSummary
+    reasoning: list[ReasoningItem] = Field(default_factory=list)
     normalized_signals: list[NormalizedSignal] = Field(default_factory=list)
     fusion_notes: list[str] = Field(default_factory=list)
 
