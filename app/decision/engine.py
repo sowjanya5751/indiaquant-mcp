@@ -9,6 +9,7 @@ from app.decision.schemas import (
     NormalizedSignal,
     ValidationConfig,
     ValidationSummary,
+    ReasoningItem,
 )
 
 
@@ -43,7 +44,47 @@ def _execution_hint(
         return "moderate_signal"
     return "weak_signal"
 
+def build_reasoning(signals: list[NormalizedSignal]) -> list[ReasoningItem]:
+    reasoning = []
 
+    for s in signals:
+        source = s.source
+        direction = s.direction
+        confidence = s.confidence
+
+        details = ""
+
+        if source.value == "technical":
+            indicators = s.metadata.get("indicators")
+            if indicators:
+                details = "Technical indicators suggest trend"
+            else:
+                details = "Technical signal generated"
+
+        elif source.value == "sentiment":
+            score = s.metadata.get("sentiment_score")
+            count = s.metadata.get("headline_count")
+            if score is not None and count is not None:
+                details = f"Sentiment score {score} from {count} headlines"
+            else:
+                details = "Sentiment data unavailable"
+        elif source.value == "options":
+            pcr = s.metadata.get("put_call_oi_ratio")
+            if pcr:
+                details = f"PCR = {pcr}"
+            else:
+                details = "Options activity analyzed"
+
+        reasoning.append(
+            ReasoningItem(
+                source=source,
+                direction=direction,
+                confidence=round(confidence, 2),
+                details=details,
+            )
+        )
+
+    return reasoning
 class DecisionEngine:
     """
     Rule-based, deterministic fusion of normalized module outputs.
@@ -63,6 +104,7 @@ class DecisionEngine:
     ) -> MarketDecisionResponse:
         notes: list[str] = []
         if not signals:
+            reasoning = build_reasoning(signals)
             return MarketDecisionResponse(
                 symbol=symbol,
                 final_direction=Direction.NEUTRAL,
@@ -79,6 +121,7 @@ class DecisionEngine:
                     annualized_volatility=annualized_volatility,
                     volume=volume,
                 ),
+                reasoning=reasoning,
                 normalized_signals=list(signals) if include_raw else [],
                 fusion_notes=notes,
             )
@@ -145,7 +188,7 @@ class DecisionEngine:
             final = Direction.NEUTRAL
 
         hint = _execution_hint(final, edge, unified, val)
-
+        reasoning = build_reasoning(signals)
         return MarketDecisionResponse(
             symbol=symbol,
             final_direction=final,
@@ -154,6 +197,7 @@ class DecisionEngine:
             execution_hint=hint,
             agreement=agreement,
             validation=val,
+            reasoning=reasoning,
             normalized_signals=list(signals) if include_raw else [],
             fusion_notes=notes,
         )
@@ -212,3 +256,4 @@ class DecisionEngine:
             annualized_volatility=annualized_volatility,
             volume=volume,
         )
+    
