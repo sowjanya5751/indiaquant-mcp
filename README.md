@@ -56,7 +56,19 @@ indiaquant-mcp
 │   ├── options
 │   ├── analytics
 │   ├── portfolio
+│   ├── decision          # decision layer v1 (normalize → fuse → validate)
 │   └── mcp
+│       ├── mcp_server.py    # FastAPI + OpenAPI
+│       └── stdio_server.py  # native MCP stdio (Claude Desktop / Cursor)
+│
+├── docs
+│   └── decision_layer_first_draft.md
+│
+├── tests
+│   └── test_decision_engine.py
+│
+├── .github/workflows
+│   └── ci.yml
 │
 ├── screenshots
 │   ├── live_price.png
@@ -65,7 +77,8 @@ indiaquant-mcp
 │   └── heatmap.png
 │
 ├── main.py
-├── config.py
+├── pytest.ini
+├── CHANGELOG.md
 ├── requirements.txt
 └── README.md
 ```
@@ -73,7 +86,7 @@ indiaquant-mcp
 
 # MCP Tools Implemented
 
-The following **10 MCP tools** are implemented as required by the assignment.
+The following **MCP / HTTP tools** are implemented.
 
 | Tool | Description |
 |-----|-------------|
@@ -83,12 +96,15 @@ The following **10 MCP tools** are implemented as required by the assignment.
 | `calculate_greeks` | Computes Black-Scholes Greeks |
 | `place_virtual_trade` | Simulates buy/sell trades |
 | `get_portfolio_pnl` | Calculates portfolio profit and loss |
-| `analyze_sentiment` | Performs sentiment analysis on financial news |
+| `analyze_sentiment` | Performs sentiment analysis on financial news (`NEWSAPI_KEY` env) |
 | `detect_unusual_activity` | Detects unusual options activity |
 | `scan_market` | Scans market for oversold stocks |
 | `get_sector_heatmap` | Displays sector performance heatmap |
+| `fuse_market_decision` | **Decision layer v1**: fuses technical + sentiment + options into unified direction, edge score, and validation |
+| `fuse_decision_manual` | Same fusion engine with caller-supplied normalized signals (tests / custom pipelines) |
+| `schemas/decision_layer` (GET) | JSON Schema bundle for decision-layer Pydantic models (integrators / contract tests) |
 
-All tools return **live market data using free APIs**.
+All tools return **live market data using free APIs** where applicable. See `docs/decision_layer_first_draft.md` for schema, examples, and fusion rules; `CHANGELOG.md` summarizes decision-layer v1. Run tests: `pytest` (see `pytest.ini`). CI: `.github/workflows/ci.yml`.
 
 ---
 
@@ -319,10 +335,16 @@ pip install -r requirements.txt
 
 # Running the MCP Server
 
+## Option A — FastAPI (HTTP tools + OpenAPI)
+
 Start the server:
 
 
+```bash
+cd indiaquant-mcp
+pip install -r requirements.txt
 uvicorn app.mcp.mcp_server:app --reload
+```
 
 
 Server will start at:
@@ -331,7 +353,36 @@ Server will start at:
 http://127.0.0.1:8000
 
 
+## Option B — Native MCP (stdio, Claude Desktop / Cursor)
+
+The repo also exposes an **official MCP server** over stdio using the Python `mcp` SDK (`FastMCP`), including **`fuse_market_decision`** and core market tools.
+
+From the repo root:
+
+```bash
+PYTHONPATH=. python -m app.mcp.stdio_server
+```
+
+Example **Claude Desktop** (`claude_desktop_config.json`) fragment:
+
+```json
+{
+  "mcpServers": {
+    "indiaquant": {
+      "command": "python3",
+      "args": ["-m", "app.mcp.stdio_server"],
+      "cwd": "/absolute/path/to/indiaquant-mcp",
+      "env": {
+        "PYTHONPATH": ".",
+        "NEWSAPI_KEY": "your-key-optional"
+      }
+    }
+  }
+}
+```
+
 ---
+
 
 # API Endpoints
 
@@ -344,6 +395,9 @@ http://127.0.0.1:8000
 | `/place_virtual_trade` | POST | Execute simulated trade |
 | `/get_portfolio_pnl` | GET | Calculate portfolio PnL |
 | `/analyze_sentiment` | POST | Analyze financial news sentiment |
+| `/fuse_market_decision` | POST | Decision layer v1: fused direction + edge + validation |
+| `/fuse_decision_manual` | POST | Fuse caller-supplied normalized signals |
+| `/schemas/decision_layer` | GET | JSON Schema bundle for decision models |
 | `/detect_unusual_activity` | POST | Detect unusual options activity |
 | `/scan_market` | GET | Find oversold stocks |
 | `/get_sector_heatmap` | GET | Sector performance overview |

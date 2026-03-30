@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
 
 from app.market_data.market_data_service import MarketDataService
 from app.signals.signal_service import SignalEngine
@@ -10,6 +9,15 @@ from app.analytics.market_scanner import MarketScanner
 from app.analytics.sentiment_service import SentimentAnalyzer
 from app.analytics.sector_heatmap import SectorHeatmap
 from app.models.request_models import SymbolRequest, TradeRequest
+from app.decision.schemas import (
+    DecisionWeights,
+    FuseDecisionRequest,
+    ManualFuseRequest,
+    MarketDecisionResponse,
+    NormalizedSignal,
+    ValidationConfig,
+)
+from app.decision.service import DecisionLayerService
 
 app = FastAPI(title="IndiaQuant MCP Server")
 
@@ -21,6 +29,11 @@ portfolio = PortfolioService()
 scanner = MarketScanner()
 sentiment = SentimentAnalyzer()
 heatmap = SectorHeatmap()
+decision_layer = DecisionLayerService(
+    signals_engine=signals,
+    options=options,
+    sentiment_analyzer=sentiment,
+)
 
 @app.post("/get_live_price")
 def get_live_price(request: SymbolRequest):
@@ -67,7 +80,37 @@ def scan_market():
 def root():
     return {
         "message": "IndiaQuant MCP Server running",
-        "docs": "/docs"
+        "docs": "/docs",
+        "decision_layer_v1": {
+            "description": "Rule-based fusion of technical + sentiment + options",
+            "endpoints": [
+                "POST /fuse_market_decision",
+                "POST /fuse_decision_manual",
+                "GET /schemas/decision_layer",
+            ],
+            "spec": "docs/decision_layer_first_draft.md",
+        },
+        "mcp_stdio": {
+            "module": "app.mcp.stdio_server",
+            "command": "PYTHONPATH=. python3 -m app.mcp.stdio_server",
+            "note": "Native MCP (Claude Desktop / Cursor); see README",
+        },
+    }
+
+
+@app.get("/schemas/decision_layer")
+def decision_layer_json_schemas():
+    """JSON Schema exports for non-Python integrators and contract tests."""
+    return {
+        "json_schema_draft": "https://json-schema.org/draft/2020-12/schema",
+        "models": {
+            "NormalizedSignal": NormalizedSignal.model_json_schema(),
+            "DecisionWeights": DecisionWeights.model_json_schema(),
+            "ValidationConfig": ValidationConfig.model_json_schema(),
+            "FuseDecisionRequest": FuseDecisionRequest.model_json_schema(),
+            "ManualFuseRequest": ManualFuseRequest.model_json_schema(),
+            "MarketDecisionResponse": MarketDecisionResponse.model_json_schema(),
+        },
     }
 
 @app.post("/detect_unusual_activity")
@@ -79,3 +122,23 @@ def detect_unusual_activity(request: SymbolRequest):
 def get_sector_heatmap():
 
     return heatmap.get_sector_heatmap()
+
+
+@app.post("/analyze_sentiment")
+def analyze_sentiment_endpoint(request: SymbolRequest):
+    return sentiment.analyze_sentiment(request.symbol)
+
+
+@app.post("/fuse_market_decision", response_model=MarketDecisionResponse)
+def fuse_market_decision(request: FuseDecisionRequest) -> MarketDecisionResponse:
+    """
+    Decision layer v1: normalizes technical, sentiment, and options outputs,
+    fuses them with configurable weights, and applies lightweight validation.
+    """
+    return decision_layer.fuse_market_decision(request)
+
+
+@app.post("/fuse_decision_manual", response_model=MarketDecisionResponse)
+def fuse_decision_manual(request: ManualFuseRequest) -> MarketDecisionResponse:
+    """Fuse caller-supplied normalized signals (integration tests / custom pipelines)."""
+    return decision_layer.fuse_manual(request)

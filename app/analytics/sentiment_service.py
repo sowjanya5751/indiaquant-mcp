@@ -1,14 +1,26 @@
+import os
+
 from newsapi import NewsApiClient
 
 
 class SentimentAnalyzer:
 
     def __init__(self):
-        self.newsapi = NewsApiClient(api_key="5fe242b84e4c40cba1786ebf844c26b4")
+        key = os.environ.get("NEWSAPI_KEY", "").strip()
+        self.newsapi = NewsApiClient(api_key=key) if key else None
 
     def analyze_sentiment(self, symbol):
 
         company = symbol
+
+        if not self.newsapi:
+            return {
+                "symbol": symbol,
+                "sentiment_score": 0,
+                "signal": "NEUTRAL",
+                "headlines": [],
+                "error": "NEWSAPI_KEY not configured",
+            }
 
         news = self.newsapi.get_everything(
             q=company,

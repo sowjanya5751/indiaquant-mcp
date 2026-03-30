@@ -1,0 +1,1 @@
+"""IndiaQuant application package."""
